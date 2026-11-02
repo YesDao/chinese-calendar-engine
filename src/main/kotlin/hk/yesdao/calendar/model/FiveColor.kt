@@ -1,15 +1,23 @@
 package hk.yesdao.calendar.model
 
 /**
- * Five colors (五色) associated with the Five Elements (Wu Xing).
+ * Five Colors (五色) associated with the Five Elements.
  */
 enum class FiveColor(
-    val hanzi: String,
-    val element: FiveElement
+    val hanzi: String
 ) {
-    BLACK("黑", FiveElement.WATER),
-    RED("赤", FiveElement.FIRE),
-    GREEN("青", FiveElement.WOOD),
-    WHITE("白", FiveElement.METAL),
-    YELLOW("黄", FiveElement.EARTH)
+    BLACK("黑"),
+    RED("赤"),
+    GREEN("青"),
+    WHITE("白"),
+    YELLOW("黄");
+
+    /**
+     * Element associated with this color.
+     *
+     * Derived from [FiveElement.color] instead of being stored,
+     * to avoid circular enum initialization between the two enums.
+     */
+    val element: FiveElement
+        get() = FiveElement.entries.first { it.color == this }
 }
