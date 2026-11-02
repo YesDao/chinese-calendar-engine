@@ -437,4 +437,18 @@ class ChineseCalendarInvariantTest {
         assertNotEquals(before.dayBranch, after.dayBranch)
         assertEquals((before.dayIndexInCycle + 1) % 60, after.dayIndexInCycle)
     }
+
+    @Test
+    fun `should start leap month at the New Moon at night`() {
+
+        // 2023-03-22 02:00 (Asia/Shanghai): first day of 闰二月,
+        // shortly after the New Moon following 春分.
+        val lunarDate = fromGregorian(
+            LocalDateTime.of(2023, 3, 22, 2, 0)
+        )
+
+        assertTrue(lunarDate.isLeapMonth, "Should be a leap month")
+        assertEquals(2, lunarDate.lunarMonthBase(), "Should be 闰二月")
+        assertEquals(1, lunarDate.lunarDay, "Should be the first day of the month")
+    }
 }

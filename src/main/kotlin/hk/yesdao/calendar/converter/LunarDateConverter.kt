@@ -61,7 +61,12 @@ object LunarDateConverter {
         logger.debug("Input zoned date: {}", zoned)
 
         // Resolve lunar calendar and solar term data for the given instant.
-        val solar = Solar.fromDate(Date.from(zoned.toInstant()))
+        val shanghai = zoned.withZoneSameInstant(SHANGHAI)
+        val solar = Solar.fromYmdHms(
+            shanghai.year, shanghai.monthValue, shanghai.dayOfMonth,
+            shanghai.hour, shanghai.minute, shanghai.second
+        )
+
         val bazi = solar.lunar.eightChar
         logger.debug(
             "Calculated stems/branches: year={}{} month={}{} day={}{} hour={}{}",
@@ -79,7 +84,7 @@ object LunarDateConverter {
         val dayIndexInCycle = GanZhi.indexOf(solar.lunar.dayInGanZhiExact)
 
         // --- Forecast-specific fields used by background layers ---
-        val isLeapYear = java.time.Year.isLeap(zoned.year.toLong())
+        val isLeapYear = java.time.Year.isLeap(shanghai.year.toLong())
 
         // Month pillar (干支) used for forecasting, adjusted for leap months (闰月).
         val (monthStemForForecast, monthBranchForForecast) = getEffectiveMonthGanZhi(solar.lunar)
@@ -120,7 +125,7 @@ object LunarDateConverter {
             monthStemForTaisui = monthStemForTaisui,
             monthBranchForTaisui = monthBranchForTaisui,
             seasonBySolarTerm = season,
-            seasonQiElement = season.getBackgroundElement(zoned)
+            seasonQiElement = season.getBackgroundElement(shanghai)
         )
     }
 
@@ -283,42 +288,9 @@ object LunarDateConverter {
      */
     internal fun getMonthGanZhiBySolarTerm(
         lunar: Lunar
-    ): Pair<HeavenlyStem, EarthlyBranch> {
-
-        val activeTerm =
-            getActiveSolarTerm(lunar)
-
-        val termIndex = SolarTerm.entries.indexOf(activeTerm)
-
-        check(termIndex >= 0) {
-            "Unknown SolarTerm: $activeTerm"
-        }
-
-        // Each solar month consists of two consecutive Solar Terms.
-        val solarMonthIndex = termIndex / 2 + 1
-
-        // The solar year starts with Beginning of Spring (立春).
-        val solarYear =
-            if (activeTerm.ordinal >= SolarTerm.LI_CHUN.ordinal)
-                lunar.solar.year
-            else
-                lunar.solar.year - 1
-
-        // Create a temporary Lunar instance to resolve
-        // the month's Heavenly Stem and Earthly Branch.
-        val lunarForMonth =
-            Lunar.fromYmdHms(
-                solarYear,
-                solarMonthIndex,
-                1,
-                12,
-                0,
-                0
-            )
-
-        return HeavenlyStem.fromHanzi(lunarForMonth.monthGan) to
-                EarthlyBranch.fromHanzi(lunarForMonth.monthZhi)
-    }
+    ): Pair<HeavenlyStem, EarthlyBranch> =
+        HeavenlyStem.fromHanzi(lunar.monthGanExact) to
+                EarthlyBranch.fromHanzi(lunar.monthZhiExact)
 
     /**
      * Maps a Solar Term to its corresponding season.

@@ -54,5 +54,8 @@ enum class SolarTerm(
         fun fromHanzi(hanzi: String): SolarTerm =
             BY_HANZI[hanzi.trim()]
                 ?: throw IllegalArgumentException("Unknown SolarTerm: $hanzi")
+
+        fun fromEnumName(name: String): SolarTerm? =
+            entries.firstOrNull { it.name == name }
     }
 }

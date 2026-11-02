@@ -56,5 +56,23 @@ enum class HeavenlyStem(
          */
         fun fromIndex(index: Int): HeavenlyStem =
             VALUES[index]
+
+        /**
+         * Returns the hour stem for the given day stem and hour branch
+         * (Five Rats rule, 五鼠遁).
+         *
+         * @param dayStem Heavenly Stem of the day.
+         * @param hourBranch Earthly Branch of the hour.
+         * @return Heavenly Stem of the hour.
+         */
+        fun calculateHourHeavenlyStemFromDay(
+            dayStem: HeavenlyStem,
+            hourBranch: EarthlyBranch
+        ): HeavenlyStem =
+            STEM_SEQUENCE[(dayStem.hourStartIndex + hourBranch.index) % 10]
+
+        private val STEM_SEQUENCE = listOf(
+            JIA, YI, BING, DING, WU, JI, GENG, XIN, REN, GUI
+        )
     }
 }
