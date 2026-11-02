@@ -34,33 +34,34 @@ object LunarDateConverter {
     private val logger = getLogger(LunarDateConverter::class.java)
 
     /**
-     * Converts a Gregorian date and time into a complete LunarDate.
+     * Converts a zoned Gregorian date and time into a complete LunarDate.
      *
-     * The input date is normalized to the Shanghai timezone, which is
-     * the reference timezone used by the traditional Chinese calendar.
+     * This is the primary conversion method of the calendar engine.
+     * All other overloads delegate to it.
+     *
+     * Day boundary follows the traditional Zi Hour (子时) rule:
+     * the new calendrical day begins at **23:00**, not at midnight.
+     * For example, 2024-05-20 23:30 (Asia/Shanghai) belongs to the
+     * day pillar of 2024-05-21. See `docs/CALENDAR_RULES.md`.
      *
      * The resulting LunarDate contains:
      * - Four Pillars (BaZi)
      * - Lunar calendar date
      * - Solar Term
-     * - Sexagenary day index
+     * - Sexagenary day index (zero-based, consistent with the day pillar)
      * - Leap month information
      * - Forecast-specific month data
      * - Seasonal Qi information
      *
-     * @param dateTime Gregorian date and time.
-     * @param zoneId Source timezone. If null, Asia/Shanghai is assumed.
+     * @param zoned Gregorian date and time with its timezone.
      * @return Complete Chinese calendrical representation.
+     * @since 1.1.0
      */
-    fun fromGregorian(dateTime: LocalDateTime, zoneId: ZoneId? = null): LunarDate {
-        logger.debug("Input birth date: {} (zone: {})", dateTime, zoneId)
+    fun fromGregorian(zoned: ZonedDateTime): LunarDate {
+        logger.debug("Input zoned date: {}", zoned)
 
-        val shanghaiTime = dateTime.atZone(zoneId ?: SHANGHAI)
-
-        logger.debug("Zone normalized to Asia/Shanghai: {}", shanghaiTime)
-
-        // Build the lunar calendar representation.
-        val solar = Solar.fromDate(Date.from(shanghaiTime.toInstant()))
+        // Resolve lunar calendar and solar term data for the given instant.
+        val solar = Solar.fromDate(Date.from(zoned.toInstant()))
         val bazi = solar.lunar.eightChar
         logger.debug(
             "Calculated stems/branches: year={}{} month={}{} day={}{} hour={}{}",
@@ -70,19 +71,25 @@ object LunarDateConverter {
             solar.lunar.timeGan, solar.lunar.timeZhi
         )
 
-        // Determine the currently active Solar Term.
+        // Determine the currently active Solar Term (e.g. 立春, 雨水...).
         val solarTerm = getActiveSolarTerm(solar.lunar)
 
-        // Determine the zero-based position within the sexagenary day cycle.
-        val dayIndexInCycle = GanZhi.indexOf(solar.lunar.dayInGanZhiExact2)
+        // Zero-based position of the day within the sexagenary cycle (0..59).
+        // Uses the Zi Hour (子时) boundary, consistent with the day pillar.
+        val dayIndexInCycle = GanZhi.indexOf(solar.lunar.dayInGanZhiExact)
 
-        val isLeapYear = java.time.Year.isLeap(dateTime.year.toLong())
+        // --- Forecast-specific fields used by background layers ---
+        val isLeapYear = java.time.Year.isLeap(zoned.year.toLong())
 
+        // Month pillar (干支) used for forecasting, adjusted for leap months (闰月).
         val (monthStemForForecast, monthBranchForForecast) = getEffectiveMonthGanZhi(solar.lunar)
 
+        // Month pillar for Tai Sui (太岁), determined strictly by Solar Terms.
         val (monthStemForTaisui, monthBranchForTaisui) = getMonthGanZhiBySolarTerm(solar.lunar)
 
+        // Effective month number used for the Monthly General (月将).
         val effectiveMonth = getEffectiveMonthForForecast(solarTerm)
+        logger.debug("is leap month: ${checkLeapMonth(solar.lunar)}")
 
         val season = solarTerm.toSeason()
 
@@ -91,8 +98,8 @@ object LunarDateConverter {
             yearBranch = EarthlyBranch.fromHanzi(solar.lunar.yearZhiExact),
             monthStem = HeavenlyStem.fromHanzi(solar.lunar.monthGanExact),
             monthBranch = EarthlyBranch.fromHanzi(solar.lunar.monthZhiExact),
-            dayStem = HeavenlyStem.fromHanzi(solar.lunar.dayGanExact2),
-            dayBranch = EarthlyBranch.fromHanzi(solar.lunar.dayZhiExact2),
+            dayStem = HeavenlyStem.fromHanzi(solar.lunar.dayGanExact),
+            dayBranch = EarthlyBranch.fromHanzi(solar.lunar.dayZhiExact),
             hourStem = HeavenlyStem.fromHanzi(solar.lunar.timeGan),
             hourBranch = EarthlyBranch.fromHanzi(solar.lunar.timeZhi),
             lunarMonth = bazi.lunar.month,
@@ -113,9 +120,24 @@ object LunarDateConverter {
             monthStemForTaisui = monthStemForTaisui,
             monthBranchForTaisui = monthBranchForTaisui,
             seasonBySolarTerm = season,
-            seasonQiElement = season.getBackgroundElement(shanghaiTime)
+            seasonQiElement = season.getBackgroundElement(zoned)
         )
     }
+
+    /**
+     * Converts a local Gregorian date and time into a complete LunarDate.
+     *
+     * Convenience overload: attaches the given timezone (Asia/Shanghai
+     * by default) and delegates to [fromGregorian] with [ZonedDateTime],
+     * so the same Zi Hour (子时) day boundary at 23:00 applies.
+     *
+     * @param dateTime Gregorian date and time.
+     * @param zoneId Source timezone. If null, Asia/Shanghai is assumed.
+     * @return Complete Chinese calendrical representation.
+     * @see fromGregorian
+     */
+    fun fromGregorian(dateTime: LocalDateTime, zoneId: ZoneId? = null): LunarDate =
+        fromGregorian(dateTime.atZone(zoneId ?: SHANGHAI))
 
     /**
      * Returns the effective seasonal element.
