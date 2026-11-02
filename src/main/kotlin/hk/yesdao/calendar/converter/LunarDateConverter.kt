@@ -4,7 +4,7 @@ import com.nlf.calendar.Lunar
 import com.nlf.calendar.LunarYear
 import com.nlf.calendar.Solar
 import hk.yesdao.calendar.cache.EarthTransitionCache.isEarthDay
-import hk.yesdao.calendar.exceprionHandling.IllegalStateException
+import hk.yesdao.calendar.exceptionHandling.IllegalStateException
 import hk.yesdao.calendar.model.*
 import hk.yesdao.calendar.time.ShanghaiTimeResolver.SHANGHAI
 import org.slf4j.LoggerFactory.*

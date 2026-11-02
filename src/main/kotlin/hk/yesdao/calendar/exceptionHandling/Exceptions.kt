@@ -1,3 +1,3 @@
-package hk.yesdao.calendar.exceprionHandling
+package hk.yesdao.calendar.exceptionHandling
 
 class IllegalStateException(msg: String) : RuntimeException(msg)
