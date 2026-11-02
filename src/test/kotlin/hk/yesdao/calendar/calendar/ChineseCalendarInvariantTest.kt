@@ -407,7 +407,7 @@ class ChineseCalendarInvariantTest {
     }
 
     @Test
-    fun `should change GanZhi day at midnight while remaining in Zi hour`() {
+    fun `should keep the same GanZhi day across midnight within Zi hour`() {
 
         val beforeMidnight = LocalDateTime.of(2024, 5, 20, 23, 59)
         val afterMidnight = LocalDateTime.of(2024, 5, 21, 0, 1)
@@ -415,33 +415,26 @@ class ChineseCalendarInvariantTest {
         val before = fromGregorian(beforeMidnight)
         val after = fromGregorian(afterMidnight)
 
-        // The GanZhi day changes exactly at midnight.
-        assertNotEquals(
-            before.dayStem,
-            after.dayStem
-        )
+        // Both moments are in Zi hour (子时), which already belongs to the next day.
+        assertEquals(before.dayStem, after.dayStem)
+        assertEquals(before.dayBranch, after.dayBranch)
+        assertEquals(before.dayIndexInCycle, after.dayIndexInCycle)
+        assertEquals(EarthlyBranch.ZI, before.hourBranch)
+        assertEquals(EarthlyBranch.ZI, after.hourBranch)
+    }
 
-        assertNotEquals(
-            before.dayBranch,
-            after.dayBranch
-        )
+    @Test
+    fun `should change GanZhi day at 23_00 when Zi hour begins`() {
 
-        // Both moments still belong to the Zi hour.
-        assertEquals(
-            EarthlyBranch.ZI,
-            before.hourBranch
-        )
+        val beforeZi = LocalDateTime.of(2024, 5, 20, 22, 59)
+        val atZi = LocalDateTime.of(2024, 5, 20, 23, 0)
 
-        assertEquals(
-            EarthlyBranch.ZI,
-            after.hourBranch
-        )
+        val before = fromGregorian(beforeZi)
+        val after = fromGregorian(atZi)
 
-        // The Heavenly Stem of the hour remains unchanged
-        // throughout the Zi hour.
-        assertEquals(
-            before.hourStem,
-            after.hourStem
-        )
+        // The new calendrical day begins at 23:00 (see docs/CALENDAR_RULES.md).
+        assertNotEquals(before.dayStem, after.dayStem)
+        assertNotEquals(before.dayBranch, after.dayBranch)
+        assertEquals((before.dayIndexInCycle + 1) % 60, after.dayIndexInCycle)
     }
 }
