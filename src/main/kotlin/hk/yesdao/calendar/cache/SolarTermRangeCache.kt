@@ -8,6 +8,7 @@ import hk.yesdao.calendar.time.ShanghaiTimeResolver.resolveZiDate
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
 
@@ -110,6 +111,17 @@ object SolarTermRangeCache {
             val start = LocalDateTime.parse(solar.toYmdHms(), YMD_HMS_FORMATTER)
             if (start.year == year) term to start else null
         }.sortedBy { it.second }
+
+    /**
+     * First Zi day of the term preceding the one active at [now].
+     * [now] may be in any time zone; it is converted to Asia/Shanghai.
+     */
+    fun getPreviousSolarTermStart(now: ZonedDateTime): LocalDate {
+        val current = resolveActiveSolarTerm(now.toInstant())
+        val previous = findByAbsoluteIndex(current.absoluteIndex - 1)
+            ?: error("Previous solar term not found for index ${current.absoluteIndex}")
+        return previous.ziStart
+    }
 }
 
 private val YMD_HMS_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")

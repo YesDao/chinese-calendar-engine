@@ -136,6 +136,7 @@ SolarTermRangeCache.resolveActiveSolarTerm(instant)
 SolarTermRangeCache.getPreviousSolarTerm(year, term)
 SolarTermRangeCache.findByAbsoluteIndex(index)
 SolarTermRangeCache.findByAbsoluteIndexRange(fromIndex, toIndex)
+SolarTermRangeCache.getPreviousSolarTermStart(now)
 ```
 
 ---

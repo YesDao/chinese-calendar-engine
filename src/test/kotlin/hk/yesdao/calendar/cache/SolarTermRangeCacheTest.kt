@@ -232,6 +232,34 @@ class SolarTermRangeCacheTest {
         fun `previous term of 小寒 is 冬至 of the previous year`() {
             assertEquals(2029 to dongZhi, SolarTermRangeCache.getPreviousSolarTerm(2030, xiaoHan))
         }
+
+        @Test
+        fun `previous term start inside the year`() {
+            val ranges = SolarTermRangeCache.getForYear(2030)
+            val now = ranges[5].ziStart.plusDays(3).atTime(12, 0).atZone(SHANGHAI)
+
+            assertEquals(ranges[4].ziStart, SolarTermRangeCache.getPreviousSolarTermStart(now))
+        }
+
+        @Test
+        fun `previous term start in early January is 大雪 of the previous year`() {
+            // 2030-01-02 is in 冬至 2029, so the previous term is 大雪 2029 (position 22)
+            val now = LocalDate.of(2030, 1, 2).atTime(12, 0).atZone(SHANGHAI)
+
+            assertEquals(
+                SolarTermRangeCache.getForYear(2029)[22].ziStart,
+                SolarTermRangeCache.getPreviousSolarTermStart(now)
+            )
+        }
+
+        /** 15:30 UTC = 23:30 Shanghai → next Zi day → next term is active, so the previous one is [r]. */
+        @Test
+        fun `previous term start converts the zone to Shanghai`() {
+            val r = SolarTermRangeCache.getForYear(2030)[3]
+            val nowUtc = r.ziEnd.atTime(15, 30).atZone(ZoneOffset.UTC)
+
+            assertEquals(r.ziStart, SolarTermRangeCache.getPreviousSolarTermStart(nowUtc))
+        }
     }
 
     // ─────────────────────────────────────────────────────────────
