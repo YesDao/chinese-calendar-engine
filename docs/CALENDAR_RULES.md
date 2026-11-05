@@ -56,6 +56,41 @@ This rule is used when calculating:
 
 ---
 
+# Solar Term Ranges (节气)
+
+Each Gregorian year contains exactly 24 Solar Terms, from Moderate Cold (小寒, early January) to Winter Solstice (冬至, late December).
+
+A Solar Term has two kinds of boundaries:
+
+* **Astronomical moment** — the exact time the Sun reaches the term's ecliptic longitude (`start`, `end`).
+* **Zi days** — the calendrical days that belong to the term (`ziStart`, `ziEnd`, inclusive).
+
+Zi days follow the Day Boundary rule above. The Zi day on which the next term begins already belongs to the next term. If a term begins after 23:00, its first Zi day is the following date.
+
+Illustrative example — a term beginning at 23:30:
+
+| Local Time       | Zi Day     | Active Term   |
+| ---------------- | ---------- | ------------- |
+| 2024-05-20 22:59 | 2024-05-20 | previous term |
+| 2024-05-20 23:10 | 2024-05-21 | new term      |
+| 2024-05-20 23:30 | 2024-05-21 | new term      |
+
+The active term at a given moment is decided by its Zi day (`SolarTermRangeCache.resolveActiveSolarTerm`), not by the exact astronomical moment. This differs from the Year Boundary, which uses the exact moment of 立春.
+
+Days in early January before Moderate Cold (小寒) belong to Winter Solstice (冬至) of the previous year.
+
+## Absolute Index
+
+Every term has an absolute index:
+
+```
+absoluteIndex = year * 24 + position   (position 0 = 小寒, 23 = 冬至)
+```
+
+The index is continuous across years, so the term before Moderate Cold (小寒) of a year is `index - 1`, which is Winter Solstice (冬至) of the previous year.
+
+---
+
 # Leap Months (闰月)
 
 The Chinese lunisolar calendar occasionally inserts an additional lunar month.
@@ -151,3 +186,5 @@ which serves as the reference timezone for:
 * Li Chun
 
 Input values may originate from any timezone, but are converted to Shanghai time before calendrical calculations begin.
+
+The current time is obtained with `ShanghaiTimeResolver.now(clock)` and `today(clock)`. The `Clock` parameter defaults to the system clock and can be replaced with a fixed clock in tests.

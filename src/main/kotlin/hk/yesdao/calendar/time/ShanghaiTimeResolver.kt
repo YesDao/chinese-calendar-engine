@@ -148,6 +148,12 @@ object ShanghaiTimeResolver {
     ): ZonedDateTime =
         instant.atZone(SHANGHAI)
 
+    fun now(clock: Clock = Clock.systemUTC()): ZonedDateTime =
+        ZonedDateTime.now(clock).withZoneSameInstant(SHANGHAI)
+
+    fun today(clock: Clock = Clock.systemUTC()): LocalDate =
+        now(clock).toLocalDate()
+
 
     fun toShanghaiLocalDateTime(
         instant: Instant

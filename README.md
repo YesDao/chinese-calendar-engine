@@ -13,6 +13,7 @@ The library provides conversion from the Gregorian calendar to a structured Chin
 - Heavenly Stems (天干)
 - Earthly Branches (地支)
 - 24 Solar Terms (节气)
+- Solar Term ranges with Zi-day boundaries and a continuous absolute index across years
 - Zi Hour (子时) handling
 - Li Chun (立春) year boundary
 - Leap month (闰月) support
@@ -21,7 +22,8 @@ The library provides conversion from the Gregorian calendar to a structured Chin
 - Four Seasons (四季)
 - Earth transition periods (土旺十八日)
 - Shanghai timezone normalization
-- Thread-safe caches for Solar Terms and Earth transitions
+- Injectable `Clock` for the current time (testable "now")
+- Thread-safe caches for Solar Terms, Solar Term ranges and Earth transitions
 
 ---
 
@@ -98,6 +100,7 @@ src
 │
 ├── cache
 │   ├── JieQiCache
+│   ├── SolarTermRangeCache
 │   └── EarthTransitionCache
 ```
 
@@ -129,6 +132,7 @@ The project contains unit tests covering both implementation and calendrical inv
 
 - Shanghai time normalization
 - JieQi cache
+- Solar Term range cache (including a check of all 24 moments of 2014 against Hong Kong Observatory data)
 - Earth transition cache
 
 ---
@@ -159,7 +163,7 @@ which contains
 
 ```kotlin
 val lunar = LunarDateConverter.fromGregorian(
-    LocalDateTime.now()
+    ShanghaiTimeResolver.now().toLocalDateTime()
 )
 
 println(lunar.yearStem)
@@ -171,6 +175,18 @@ println(lunar.solarTerm)
 println(lunar.seasonQiElement)
 ```
 
+### Solar Term ranges
+
+```kotlin
+val current = SolarTermRangeCache.resolveActiveSolarTerm(Instant.now())
+
+println(current.term)                      // e.g. SolarTerm.LI_CHUN
+println(current.ziStart..current.ziEnd)    // Zi days of the term, inclusive
+
+// Navigate across years by absolute index
+val previous = SolarTermRangeCache.findByAbsoluteIndex(current.absoluteIndex - 1)
+```
+
 ---
 
 ## Current Status
@@ -179,6 +195,7 @@ Current implementation includes:
 
 - ✔ Gregorian → Lunar conversion
 - ✔ Solar Terms
+- ✔ Solar Term ranges (Zi days, absolute index)
 - ✔ GanZhi
 - ✔ Leap Months
 - ✔ Zi Hour

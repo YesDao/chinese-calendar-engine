@@ -30,6 +30,7 @@ Responsible for all timezone normalization.
 Responsibilities:
 
 * Convert any input timezone to Asia/Shanghai.
+* Provide the current Shanghai time from an injectable `Clock` (`now(clock)`, `today(clock)`).
 * Resolve Zi Hour date.
 * Calculate Zi Hour index.
 * Generate cache keys.
@@ -55,7 +56,7 @@ Responsibilities:
 Public API:
 
 ```kotlin
-LunarDateConverter.fromGregorian(...)
+LunarDateConverter.fromGregorian(dateTime)
 ```
 
 ---
@@ -100,7 +101,7 @@ All domain concepts are represented as strongly typed Kotlin enums rather than r
 
 # Cache Layer
 
-The library contains two thread-safe caches.
+The library contains three thread-safe caches.
 
 ## JieQiCache
 
@@ -110,6 +111,32 @@ Purpose:
 
 * avoid repeated astronomical calculations
 * improve conversion performance
+
+---
+
+## SolarTermRangeCache
+
+Built on top of `JieQiCache`. For each Gregorian year it holds the 24 Solar Terms as `SolarTermRange`:
+
+* `start`, `end` — astronomical moments (end = start of the next term, exclusive)
+* `ziStart`, `ziEnd` — Zi days of the term, inclusive
+* `absoluteIndex` — `year * 24 + position`, continuous across years
+
+Years around the current one (±10) are built at startup; any other year is built lazily on first access. Each year is built exactly once, also under concurrent access.
+
+Incomplete source data (not exactly 24 terms, or no data for the following year) fails immediately instead of producing approximate ranges.
+
+Public API:
+
+```kotlin
+SolarTermRangeCache.getForYear(year)
+SolarTermRangeCache.getSolarTermRange(date)
+SolarTermRangeCache.getSolarTermRange(year, term)
+SolarTermRangeCache.resolveActiveSolarTerm(instant)
+SolarTermRangeCache.getPreviousSolarTerm(year, term)
+SolarTermRangeCache.findByAbsoluteIndex(index)
+SolarTermRangeCache.findByAbsoluteIndexRange(fromIndex, toIndex)
+```
 
 ---
 
@@ -168,6 +195,7 @@ Verifies timezone normalization and Zi Hour calculations.
 Infrastructure tests covering:
 
 * JieQiCache
+* SolarTermRangeCache — structure of each year, Zi-day rules, absolute index, lazy and concurrent building, and a check of all 24 moments of 2014 against Hong Kong Observatory data
 * EarthTransitionCache
 
 ---
@@ -179,5 +207,6 @@ The library follows several design principles.
 * Immutable domain model.
 * Strong typing instead of string values.
 * Thread-safe caches.
+* No hidden global clock: the current time comes from an injectable `Clock`.
 * Clear separation between infrastructure and calendrical rules.
 * Public API independent of the underlying astronomical implementation.
