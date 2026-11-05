@@ -7,6 +7,8 @@ import hk.yesdao.calendar.cache.EarthTransitionCache.isEarthDay
 import hk.yesdao.calendar.exceptionHandling.IllegalStateException
 import hk.yesdao.calendar.model.*
 import hk.yesdao.calendar.time.ShanghaiTimeResolver.SHANGHAI
+import hk.yesdao.calendar.time.ShanghaiTimeResolver.calculateZiHourIndex
+import hk.yesdao.calendar.time.SolarTime
 import org.slf4j.LoggerFactory.*
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -143,6 +145,95 @@ object LunarDateConverter {
      */
     fun fromGregorian(dateTime: LocalDateTime, zoneId: ZoneId? = null): LunarDate =
         fromGregorian(dateTime.atZone(zoneId ?: SHANGHAI))
+
+    /**
+     * Converts a moment of birth into a LunarDate whose day and hour
+     * pillars follow the Sun at the place of birth.
+     *
+     * - **Year and month pillars**, Solar Term, forecast / Tai Sui months
+     *   and season are taken from the real instant of birth, exactly
+     *   as in [fromGregorian]: Solar Terms are astronomical moments and
+     *   do not depend on the observer's clock.
+     * - **Day and hour pillars** are resolved from the birth time on the
+     *   clock selected by [mode] (true solar time by default), with the
+     *   Zi Hour (子时) rule: from 23:00 on that clock the day pillar is
+     *   already the next day's.
+     * - **Hour stem** is derived from the resolved day stem by the
+     *   Five Rats rule (五鼠遁), so a Zi hour after 23:00 gets the stem
+     *   of the next day's cycle.
+     * - [LunarDate.dayIndexInCycle] matches the resolved day pillar.
+     *
+     * - **Clock fields** (`lunarMonth`, `lunarDay`, `lunarHour`,
+     *   `isLeapMonth`, `isLunarNewYear`, `solarMonth`, `solarDay`,
+     *   `solarHour`, `solarMinute`) follow the same chosen clock
+     *   (including [hourBranchShift]), so any code that reads the hour
+     *   or date from them sees the effective birth time.
+     *
+     * [hourBranchShift] is a manual calibration: each step moves the
+     * effective birth time by one double hour (2 h). Crossing 23:00
+     * moves the day pillar as well, so the pillars stay consistent.
+     *
+     * Example: Shanghai (121.47° E), 2026-11-03 22:45 Beijing time.
+     * True solar time is ≈ 23:07 (longitude +6 min, Equation of Time
+     * +16 min), so the chart gets the Zi hour of 2026-11-04 with the
+     * day pillar of 2026-11-04.
+     *
+     * @param birth Moment of birth with the timezone it was recorded in.
+     * @param longitude Longitude of the place of birth, degrees, east positive.
+     * @param mode Clock used for the day and hour pillars.
+     * @param hourBranchShift Calibration in double hours (may be negative).
+     * @since 1.7.0
+     */
+    fun fromBirth(
+        birth: ZonedDateTime,
+        longitude: Double,
+        mode: BirthTimeMode = BirthTimeMode.TRUE_SOLAR,
+        hourBranchShift: Int = 0
+    ): LunarDate {
+        val moment = fromGregorian(birth)
+
+        val instant = birth.toInstant()
+        val clock: LocalDateTime = when (mode) {
+            BirthTimeMode.BEIJING -> birth.withZoneSameInstant(SHANGHAI).toLocalDateTime()
+            BirthTimeMode.LOCAL_MEAN_SOLAR -> SolarTime.localMeanSolarTime(instant, longitude)
+            BirthTimeMode.TRUE_SOLAR -> SolarTime.trueSolarTime(instant, longitude)
+        }
+        val effective = clock.plusHours(2L * hourBranchShift)
+
+        // Day pillar on the chosen clock; *Exact switches the day at 23:00 (子时).
+        val dayLunar = Solar.fromYmdHms(
+            effective.year, effective.monthValue, effective.dayOfMonth,
+            effective.hour, effective.minute, effective.second
+        ).lunar
+
+        val dayStem = HeavenlyStem.fromHanzi(dayLunar.dayGanExact)
+        val dayBranch = EarthlyBranch.fromHanzi(dayLunar.dayZhiExact)
+        val hourBranch = EarthlyBranch.fromIndex(calculateZiHourIndex(effective))
+        val hourStem = HeavenlyStem.calculateHourHeavenlyStemFromDay(dayStem, hourBranch)
+
+        logger.debug(
+            "Birth {} mode={} shift={} -> clock {} -> day {}{} hour {}{}",
+            birth, mode, hourBranchShift, effective,
+            dayStem.hanzi, dayBranch.hanzi, hourStem.hanzi, hourBranch.hanzi
+        )
+
+        return moment.copy(
+            dayStem = dayStem,
+            dayBranch = dayBranch,
+            hourStem = hourStem,
+            hourBranch = hourBranch,
+            dayIndexInCycle = GanZhi.indexOf(dayLunar.dayInGanZhiExact),
+            lunarMonth = dayLunar.month,
+            lunarDay = dayLunar.day,
+            lunarHour = dayLunar.hour,
+            isLeapMonth = checkLeapMonth(dayLunar),
+            isLunarNewYear = dayLunar.day == 1 && dayLunar.month == 1 && !checkLeapMonth(dayLunar),
+            solarMonth = effective.monthValue,
+            solarDay = effective.dayOfMonth,
+            solarHour = effective.hour,
+            solarMinute = effective.minute
+        )
+    }
 
     /**
      * Returns the effective seasonal element.

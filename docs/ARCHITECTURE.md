@@ -37,6 +37,11 @@ Responsibilities:
 
 No calendrical logic is implemented here.
 
+## SolarTime
+
+Local mean solar time, true solar time and the Equation of Time for a
+given instant and longitude. Used for birth charts; no calendrical logic.
+
 ---
 
 ## LunarDateConverter
@@ -57,6 +62,7 @@ Public API:
 
 ```kotlin
 LunarDateConverter.fromGregorian(dateTime)
+LunarDateConverter.fromBirth(birth, longitude, mode, hourBranchShift)
 ```
 
 ---
@@ -167,6 +173,15 @@ Examples:
 * Gregorian conversion
 * timezone handling
 * forecast month calculation
+
+---
+
+## BirthChartConverterTest
+
+Equation of Time against known values, solar-time day and hour pillars
+(Zi hour crossing in both directions, Europe vs Beijing clock),
+calibration shift, Li Chun by real instant, and a randomized check that
+the hour stem follows the day stem and year/month match `fromGregorian`.
 
 ---
 

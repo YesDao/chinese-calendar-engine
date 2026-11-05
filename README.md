@@ -73,6 +73,7 @@ The library correctly implements:
 - day transition after 23:00
 - Li Chun year transition
 - Solar Term based month calculations
+- birth charts on local solar time (真太阳时), see below
 
 ---
 
@@ -175,6 +176,19 @@ println(lunar.solarTerm)
 println(lunar.seasonQiElement)
 ```
 
+### Birth chart on true solar time
+
+```kotlin
+// Born in Berlin (13.4° E) at 23:20 local time
+val birth = ZonedDateTime.of(1990, 6, 15, 23, 20, 0, 0, ZoneId.of("Europe/Berlin"))
+
+val chart = LunarDateConverter.fromBirth(birth, longitude = 13.4)
+// Year / month: real instant of birth. Day / hour: true solar time (≈ 22:13 → 亥, 15 June).
+// On Beijing time the same moment would be 05:20 on 16 June (卯).
+
+val calibrated = LunarDateConverter.fromBirth(birth, 13.4, hourBranchShift = 1) // 子 of 16 June
+```
+
 ### Solar Term ranges
 
 ```kotlin
@@ -199,6 +213,7 @@ Current implementation includes:
 - ✔ GanZhi
 - ✔ Leap Months
 - ✔ Zi Hour
+- ✔ Birth charts on local mean / true solar time
 - ✔ Li Chun year boundary
 - ✔ Forecast month calculation
 - ✔ Tai Sui month calculation

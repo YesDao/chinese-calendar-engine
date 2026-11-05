@@ -188,3 +188,39 @@ which serves as the reference timezone for:
 Input values may originate from any timezone, but are converted to Shanghai time before calendrical calculations begin.
 
 The current time is obtained with `ShanghaiTimeResolver.now(clock)` and `today(clock)`. The `Clock` parameter defaults to the system clock and can be replaced with a fixed clock in tests.
+---
+
+# Birth Time (真太阳时)
+
+Civil time is not the Sun's time. All of China runs on UTC+8, and birth
+times abroad are recorded in local civil zones. For a birth chart the
+hour pillar must follow the Sun at the place of birth.
+
+`LunarDateConverter.fromBirth(birth, longitude, mode, hourBranchShift)`:
+
+* **Year and month pillars**, Solar Term, forecast and Tai Sui months and
+  season come from the **real instant** of birth (same as `fromGregorian`).
+  Solar Terms, including Li Chun, are astronomical moments.
+* **Day and hour pillars** come from the birth time on the clock chosen by
+  `BirthTimeMode`:
+  * `BEIJING` — UTC+8, identical to `fromGregorian`;
+  * `LOCAL_MEAN_SOLAR` — UTC + longitude × 4 min (平太阳时);
+  * `TRUE_SOLAR` (default) — mean solar time + Equation of Time (真太阳时).
+* The Zi Hour rule applies on that clock: from **23:00** the day pillar is
+  the next day's.
+* The hour stem is derived from the resolved day stem (五鼠遁), so a Zi hour
+  after 23:00 uses the next day's stem.
+* `hourBranchShift` moves the effective time by whole double hours (2 h)
+  for manual calibration; crossing 23:00 moves the day pillar too.
+* Clock fields (`lunarMonth`, `lunarDay`, `lunarHour`, `isLeapMonth`,
+  `solarMonth`, `solarDay`, `solarHour`, `solarMinute`) follow the same
+  chosen clock, including the calibration shift.
+
+Example (Shanghai, 121.47° E):
+
+| Beijing time     | True solar time | Day pillar of | Hour |
+| ---------------- | --------------- | ------------- | ---- |
+| 2026-11-03 22:45 | ≈ 23:07         | 2026-11-04    | 子   |
+
+The Equation of Time uses the NOAA approximation (error < 30 s).
+Implemented in `SolarTime`.
