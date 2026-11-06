@@ -79,7 +79,60 @@ enum class GanZhi(
     REN_XU("壬戌"),
     GUI_HAI("癸亥");
 
+    /**
+     * Zero-based position within the sexagenary cycle (甲子 = 0, 癸亥 = 59).
+     */
+    val index: Int
+        get() = ordinal
+
+    /**
+     * Heavenly Stem of this combination.
+     */
+    val stem: HeavenlyStem
+        get() = HeavenlyStem.fromIndex(ordinal % STEMS)
+
+    /**
+     * Earthly Branch of this combination.
+     */
+    val branch: EarthlyBranch
+        get() = EarthlyBranch.fromIndex(ordinal % BRANCHES)
+
+    /**
+     * Next combination in the cycle (癸亥 -> 甲子).
+     */
+    fun next(): GanZhi = fromIndex(ordinal + 1)
+
+    /**
+     * Previous combination in the cycle (甲子 -> 癸亥).
+     */
+    fun prev(): GanZhi = fromIndex(ordinal - 1)
+
     companion object {
+
+        private const val CYCLE = 60
+        private const val STEMS = 10
+        private const val BRANCHES = 12
+
+        private val VALUES = entries.toTypedArray()
+
+        private val BY_PAIR =
+            entries.associateBy { it.stem to it.branch }
+
+        /**
+         * Returns the GanZhi at the specified position.
+         * The index wraps around the 60-cycle: 60 -> 甲子, -1 -> 癸亥.
+         */
+        fun fromIndex(index: Int): GanZhi =
+            VALUES[Math.floorMod(index, CYCLE)]
+
+        /**
+         * Returns the GanZhi for the specified stem and branch.
+         * Only 60 of the 120 pairs exist: the stem and the branch
+         * must have the same yin-yang parity.
+         */
+        fun from(stem: HeavenlyStem, branch: EarthlyBranch): GanZhi =
+            BY_PAIR[stem to branch]
+                ?: throw IllegalArgumentException("Invalid GanZhi pair: ${stem.hanzi}${branch.hanzi}")
 
         private val BY_HANZI =
             entries.associateBy { it.hanzi }
