@@ -347,25 +347,4 @@ class SolarTermRangeCacheTest {
             assertEquals(2029L * 24 + 23, active.absoluteIndex)
         }
     }
-
-    // ─────────────────────────────────────────────────────────────
-    // 6. Free access boundary (moves to yesdao-platform together with the method)
-    // ─────────────────────────────────────────────────────────────
-    @Nested
-    inner class FreeAccessBoundary {
-
-        private val day = LocalDate.of(2030, 6, 10)
-
-        @Test
-        fun `before 23_00 the boundary is two days back`() {
-            assertEquals(day.minusDays(2), SolarTermRangeCache.resolveFreeAccessBoundary(day.atTime(22, 59)))
-            assertEquals(day.minusDays(2), SolarTermRangeCache.resolveFreeAccessBoundary(day.atStartOfDay()))
-        }
-
-        @Test
-        fun `from 23_00 the boundary moves one day forward`() {
-            assertEquals(day.minusDays(1), SolarTermRangeCache.resolveFreeAccessBoundary(day.atTime(23, 0)))
-            assertEquals(day.minusDays(1), SolarTermRangeCache.resolveFreeAccessBoundary(day.atTime(23, 59)))
-        }
-    }
 }

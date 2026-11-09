@@ -77,13 +77,6 @@ object SolarTermRangeCache {
     fun findByAbsoluteIndexRange(fromIndex: Long, toIndex: Long): List<SolarTermRange> =
         (fromIndex..toIndex).mapNotNull { findByAbsoluteIndex(it) }
 
-    /**
-     * Last day open for free access at [now] (Asia/Shanghai local time):
-     * two Zi days back, so the previous day opens at 23:00.
-     */
-    fun resolveFreeAccessBoundary(now: LocalDateTime): LocalDate =
-        resolveZiDate(now).minusDays(2)
-
     private fun buildRangesForYear(year: Int): List<SolarTermRange> {
         val terms = termStarts(year)
         check(terms.size == 24) { "Expected 24 solar terms for $year, got ${terms.size}" }
