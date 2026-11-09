@@ -189,6 +189,20 @@ val chart = LunarDateConverter.fromBirth(birth, longitude = 13.4)
 val calibrated = LunarDateConverter.fromBirth(birth, 13.4, hourBranchShift = 1) // 子 of 16 June
 ```
 
+### "Today" by place
+
+```kotlin
+// Zi day changes at 23:00 true solar time of the given longitude (Ho Chi Minh City, 106.7° E)
+val today = ZiDay.today(longitude = 106.7)
+val changesAt = ZiDay.nextStart(Instant.now(), 106.7)
+
+// Without a longitude: 23:00 Asia/Shanghai, as before
+val shanghaiToday = ZiDay.today()
+
+// Solar term boundaries always stay on Asia/Shanghai; only the date depends on the place
+val term = SolarTermRangeCache.resolveActiveSolarTerm(Instant.now(), 106.7)
+```
+
 ### Solar Term ranges
 
 ```kotlin
@@ -214,6 +228,7 @@ Current implementation includes:
 - ✔ Leap Months
 - ✔ Zi Hour
 - ✔ Birth charts on local mean / true solar time
+- ✔ Zi day "today" by place (true solar time, 1.9.0)
 - ✔ Li Chun year boundary
 - ✔ Forecast month calculation
 - ✔ Tai Sui month calculation

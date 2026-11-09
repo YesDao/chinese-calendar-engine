@@ -26,6 +26,18 @@ Example:
 
 This convention is used for cache keys, Zi Hour calculations and all higher-level calendar computations.
 
+## "Today" by place (`ZiDay`)
+
+"Today" (the current Zi day) can be taken at the user's place:
+
+* Without a longitude: 23:00 Asia/Shanghai zone time (the rule above).
+* With a longitude (−180..180, east positive): the day changes at 23:00 **true solar time**
+  of that longitude (`ZiDay.of`, `ZiDay.today`, `ZiDay.nextStart`).
+
+Solar term boundaries **always stay on Asia/Shanghai** — they are the fixed point of reference.
+Only the date that "today" maps to depends on the place, and the term is then looked up by that date
+(`SolarTermRangeCache.resolveActiveSolarTerm(instant, longitude)`).
+
 ---
 
 # Year Boundary (立春)

@@ -5,6 +5,7 @@ import hk.yesdao.calendar.model.SolarTerm
 import hk.yesdao.calendar.time.ShanghaiTimeResolver.SHANGHAI
 import hk.yesdao.calendar.time.ShanghaiTimeResolver.now
 import hk.yesdao.calendar.time.ShanghaiTimeResolver.resolveZiDate
+import hk.yesdao.calendar.time.ZiDay
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -57,6 +58,10 @@ object SolarTermRangeCache {
     /** The term active at [instant], decided by its Zi day in Asia/Shanghai. */
     fun resolveActiveSolarTerm(instant: Instant): SolarTermRange =
         getSolarTermRange(resolveZiDate(instant.atZone(SHANGHAI)))
+
+    /** Term active at [instant] for a person at [longitude]: term of their Zi day (term boundaries by Shanghai). */
+    fun resolveActiveSolarTerm(instant: Instant, longitude: Double?): SolarTermRange =
+        getSolarTermRange(ZiDay.of(instant, longitude))
 
     /** The term preceding [term] of [year], as (year, term). Crosses year boundaries. */
     fun getPreviousSolarTerm(year: Int, term: SolarTerm): Pair<Int, SolarTerm> {

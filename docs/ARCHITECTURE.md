@@ -42,6 +42,11 @@ No calendrical logic is implemented here.
 Local mean solar time, true solar time and the Equation of Time for a
 given instant and longitude. Used for birth charts; no calendrical logic.
 
+## ZiDay
+
+Zi day containing an instant, and the start of the next one, either on Asia/Shanghai
+zone time (no longitude) or on true solar time at a longitude. Solar term boundaries stay on Shanghai.
+
 ---
 
 ## LunarDateConverter
