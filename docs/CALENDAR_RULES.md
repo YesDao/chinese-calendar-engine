@@ -152,25 +152,19 @@ These periods are used to determine the active Earth Qi.
 
 Forecast calculations use a modified month pillar.
 
-Rules:
+Rule:
 
-Regular month:
-
-```
-Forecast Month Pillar
-=
-Current Month Pillar
-```
-
-Leap month:
+The forecast month pillar is determined by Solar Terms (节气) and does not
+depend on leap months (闰月): a leap lunar month has no pillar of its own,
+the pillar is simply the one of the solar-term month the date falls in.
 
 ```
-Forecast Month Pillar
-=
-Previous Month Pillar
+Forecast Month Pillar = Month Pillar by Solar Terms
 ```
 
-This rule follows traditional Chinese metaphysical practice where leap months inherit the energetic influence of the preceding month.
+Difference from `monthForTaisui`: the forecast month switches on the jie
+day (the whole calendar day of the 节气), whereas the Tai Sui month switches
+at the exact moment of the term.
 
 The library exposes:
 

@@ -27,27 +27,41 @@ class LunarDateConverterTest {
 
     private val shanghaiZoneId = ZoneId.of("Asia/Shanghai")
 
+    @ParameterizedTest
+    @CsvSource(
+        "2023-04-08, 丙辰",
+        "2023-03-25, 乙卯",
+        "2025-08-01, 癸未",
+        "2025-08-10, 甲申",
+        "2020-06-10, 壬午"
+    )
+    fun `forecast month pillar follows solar terms in leap months`(date: String, expected: String) {
+        val d = LocalDate.parse(date)
+        val lunarDate = fromGregorian(d.atTime(12, 0), shanghaiZoneId)
+
+        assertTrue(lunarDate.isLeapMonth)
+        assertEquals(
+            expected,
+            lunarDate.monthStemForForecast.hanzi + lunarDate.monthBranchForForecast.hanzi
+        )
+    }
+
     @Test
-    fun `should use previous month pillar for forecast in leap month`() {
-
-        val lunarDate = fromGregorian(
-            LocalDateTime.of(2023, 4, 8, 12, 0),
-            shanghaiZoneId
-        )
-
-        assertTrue(
-            lunarDate.isLeapMonth
-        )
-
-        assertNotEquals(
-            lunarDate.monthStem,
-            lunarDate.monthStemForForecast
-        )
-
-        assertNotEquals(
-            lunarDate.monthBranch,
-            lunarDate.monthBranchForForecast
-        )
+    fun `forecast month equals Tai Sui month on every non-jie day 1984-2044`() {
+        var day = LocalDate.of(1984, 1, 1)
+        val end = LocalDate.of(2044, 12, 31)
+        var checked = 0
+        while (!day.isAfter(end)) {
+            val isJieDay = Solar.fromYmd(day.year, day.monthValue, day.dayOfMonth).lunar.jie.isNotEmpty()
+            if (!isJieDay) {
+                val d = fromGregorian(day.atTime(12, 0), shanghaiZoneId)
+                assertEquals(d.monthStemForTaisui, d.monthStemForForecast, "stem on $day")
+                assertEquals(d.monthBranchForTaisui, d.monthBranchForForecast, "branch on $day")
+                checked++
+            }
+            day = day.plusDays(1)
+        }
+        println("Forecast/TaiSui invariant: $checked days checked")
     }
 
     @Test

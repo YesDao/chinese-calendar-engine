@@ -230,7 +230,7 @@ Current implementation includes:
 - ✔ Birth charts on local mean / true solar time
 - ✔ Zi day "today" by place (true solar time, 1.9.0)
 - ✔ Li Chun year boundary
-- ✔ Forecast month calculation
+- ✔ Forecast month calculation (always by 节气, also in leap months, 1.9.1)
 - ✔ Tai Sui month calculation
 - ✔ Thread-safe caches
 - ✔ Unit tests

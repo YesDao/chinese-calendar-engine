@@ -88,8 +88,11 @@ object LunarDateConverter {
         // --- Forecast-specific fields used by background layers ---
         val isLeapYear = java.time.Year.isLeap(shanghai.year.toLong())
 
-        // Month pillar (干支) used for forecasting, adjusted for leap months (闰月).
-        val (monthStemForForecast, monthBranchForForecast) = getEffectiveMonthGanZhi(solar.lunar)
+        // Month pillar (干支) used for forecasting: always by Solar Terms (节气),
+        // switching on the jie day itself (not at the exact moment, unlike Tai Sui).
+        // Leap months (闰月) do not exist in the solar-term month system.
+        val monthStemForForecast = HeavenlyStem.fromHanzi(solar.lunar.monthGan)
+        val monthBranchForForecast = EarthlyBranch.fromHanzi(solar.lunar.monthZhi)
 
         // Month pillar for Tai Sui (太岁), determined strictly by Solar Terms.
         val (monthStemForTaisui, monthBranchForTaisui) = getMonthGanZhiBySolarTerm(solar.lunar)
@@ -341,28 +344,6 @@ object LunarDateConverter {
                 ?: return false
 
         return lunar.month == trueLeap.month
-    }
-
-    /**
-     * Returns the effective month pillar used by forecasting.
-     *
-     * For leap months, the previous regular month's pillar is used
-     * according to traditional Chinese calendrical rules.
-     */
-    private fun getEffectiveMonthGanZhi(lunar: Lunar): Pair<HeavenlyStem, EarthlyBranch> {
-
-        if (!checkLeapMonth(lunar)) {
-            return HeavenlyStem.fromHanzi(lunar.monthGan) to
-                    EarthlyBranch.fromHanzi(lunar.monthZhi)
-        }
-
-        val baseMonth = kotlin.math.abs(lunar.month)
-        val prevMonth = (baseMonth - 1).coerceAtLeast(1)
-
-        val prevLunar = Lunar.fromYmdHms(lunar.year, prevMonth, 1, 12, 0, 0)
-
-        return HeavenlyStem.fromHanzi(prevLunar.monthGan) to
-                EarthlyBranch.fromHanzi(prevLunar.monthZhi)
     }
 
     /**
