@@ -150,7 +150,7 @@ These periods are used to determine the active Earth Qi.
 
 # Forecast Month
 
-Forecast calculations use a modified month pillar.
+Forecast calculations use the month pillar by Solar Terms (节气), switching on the jie day.
 
 Rule:
 

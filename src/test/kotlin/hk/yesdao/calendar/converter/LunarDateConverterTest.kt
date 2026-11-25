@@ -61,7 +61,7 @@ class LunarDateConverterTest {
             }
             day = day.plusDays(1)
         }
-        println("Forecast/TaiSui invariant: $checked days checked")
+        assertEquals(21549, checked, "number of non-jie days checked")
     }
 
     @Test
